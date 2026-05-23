@@ -122,6 +122,7 @@ export function MenuManager({ initialItems, categories }: Props) {
         return
       }
       setMainImageUrl(result.url)
+      setForm((prev) => ({ ...prev, image_url: result.url }))
     })
   }
 
@@ -135,6 +136,7 @@ export function MenuManager({ initialItems, categories }: Props) {
     startMainTransition(async () => {
       await removeMainImage(editingItem.id)
       setMainImageUrl(null)
+      setForm((prev) => ({ ...prev, image_url: '' }))
     })
   }
 
