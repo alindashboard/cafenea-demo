@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import { ChevronDown } from 'lucide-react'
 import type { MenuItem, MenuCategory } from '@/types/database'
 import { SITE_CONFIG } from '@/lib/config'
 
@@ -18,13 +19,13 @@ const ALLERGEN_COLORS: Record<string, string> = {
   ouă: '#FF9800',
 }
 
-function AllergenTag({ allergen }: { allergen: string }) {
+function AllergenDot({ allergen }: { allergen: string }) {
   const label = ALLERGEN_LABELS[allergen] ?? allergen.slice(0, 1).toUpperCase()
   const color = ALLERGEN_COLORS[allergen] ?? '#9C7B6A'
   return (
     <span
       title={allergen}
-      className="inline-flex items-center justify-center w-5 h-5 rounded-full text-white text-[10px] font-bold"
+      className="inline-flex items-center justify-center w-[18px] h-[18px] rounded-full text-white text-[9px] font-bold shrink-0"
       style={{ backgroundColor: color }}
     >
       {label}
@@ -33,11 +34,12 @@ function AllergenTag({ allergen }: { allergen: string }) {
 }
 
 function MenuItemCard({ item }: { item: MenuItem }) {
+  const [sizesOpen, setSizesOpen] = useState(false)
   const hasMultipleSizes = item.sizes && item.sizes.length > 1
   const singleSize = item.sizes && item.sizes.length === 1
 
   return (
-    <div className={`flex gap-3 p-4 rounded-2xl border transition-all hover:shadow-md ${
+    <div className={`flex gap-3 p-3.5 rounded-2xl border transition-all hover:shadow-md ${
       item.available ? 'border-[#E8D5C0] bg-[#FFF9F0]' : 'border-[#E8D5C0] bg-[#F5EDE0] opacity-60'
     }`}>
       {/* Image */}
@@ -46,11 +48,11 @@ function MenuItemCard({ item }: { item: MenuItem }) {
         <img
           src={item.image_url}
           alt={item.name}
-          className="w-[72px] h-[72px] rounded-xl object-cover shrink-0"
+          className="w-[68px] h-[68px] rounded-xl object-cover shrink-0"
         />
       ) : (
         <div
-          className="w-[72px] h-[72px] rounded-xl shrink-0 flex items-center justify-center text-2xl"
+          className="w-[68px] h-[68px] rounded-xl shrink-0 flex items-center justify-center text-2xl"
           style={{ background: 'linear-gradient(135deg, #3D2218, #D4956A)' }}
         >
           ☕
@@ -59,8 +61,10 @@ function MenuItemCard({ item }: { item: MenuItem }) {
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-start justify-between gap-2 mb-1">
-          <div className="flex items-center gap-2 min-w-0">
+
+        {/* Row 1: name + badges | allergens top-right */}
+        <div className="flex items-start justify-between gap-1 mb-1">
+          <div className="flex items-center gap-1.5 flex-wrap min-w-0">
             <h3 className="font-semibold text-[#1A0F0A] text-sm leading-tight">{item.name}</h3>
             {item.is_popular && (
               <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded-full font-semibold"
@@ -74,15 +78,23 @@ function MenuItemCard({ item }: { item: MenuItem }) {
               </span>
             )}
           </div>
+
+          {/* Alergeni — colț dreapta sus */}
+          {item.allergens && item.allergens.length > 0 && (
+            <div className="flex gap-0.5 shrink-0 mt-0.5">
+              {item.allergens.map((a) => <AllergenDot key={a} allergen={a} />)}
+            </div>
+          )}
         </div>
 
+        {/* Description */}
         {item.description && (
           <p className="text-xs text-[#7A5C4A] mb-2 leading-relaxed">{item.description}</p>
         )}
 
-        {/* Features */}
+        {/* Features — ascunse pe mobil, vizibile de la sm */}
         {item.features && item.features.length > 0 && (
-          <div className="flex flex-wrap gap-1 mb-2">
+          <div className="hidden sm:flex flex-wrap gap-1 mb-2">
             {item.features.map((f) => (
               <span key={f} className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#F5E8D8] text-[#7A5C4A]">
                 {f}
@@ -91,29 +103,48 @@ function MenuItemCard({ item }: { item: MenuItem }) {
           </div>
         )}
 
-        {/* Bottom row: allergens + price */}
-        <div className="flex items-end justify-between gap-2">
-          <div className="flex gap-1">
-            {item.allergens?.map((a) => <AllergenTag key={a} allergen={a} />)}
-          </div>
+        {/* Preț */}
+        <div className="flex justify-end mt-1">
+          {hasMultipleSizes ? (
+            <div className="text-right">
+              {/* Buton collapse/expand */}
+              <button
+                type="button"
+                onClick={() => setSizesOpen((o) => !o)}
+                className="inline-flex items-center gap-1 justify-end"
+                aria-expanded={sizesOpen}
+                aria-label={sizesOpen ? 'Ascunde mărimi' : 'Vezi mărimi'}
+              >
+                {!sizesOpen && (
+                  <span className="text-sm font-bold text-[#2C1810]">
+                    {item.sizes![0].price}–{item.sizes![item.sizes!.length - 1].price} lei
+                  </span>
+                )}
+                <ChevronDown
+                  className="h-3.5 w-3.5 text-[#9C7B6A] transition-transform duration-200"
+                  style={{ transform: sizesOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                />
+              </button>
 
-          {/* Price */}
-          <div className="text-right shrink-0">
-            {hasMultipleSizes ? (
-              <div className="flex flex-col gap-0.5">
-                {item.sizes!.map((s) => (
-                  <div key={s.name} className="flex items-center gap-2 justify-end">
-                    <span className="text-[11px] text-[#9C7B6A]">{s.name}{s.ml ? ` ${s.ml}ml` : ''}</span>
-                    <span className="text-sm font-bold text-[#2C1810]">{s.price} lei</span>
-                  </div>
-                ))}
-              </div>
-            ) : singleSize ? (
-              <span className="text-base font-bold text-[#2C1810]">{item.sizes![0].price} lei</span>
-            ) : (
-              <span className="text-base font-bold text-[#2C1810]">{item.price} lei</span>
-            )}
-          </div>
+              {/* Mărimi expandate */}
+              {sizesOpen && (
+                <div className="flex flex-col gap-0.5 mt-1">
+                  {item.sizes!.map((s) => (
+                    <div key={s.name} className="flex items-center gap-2 justify-end">
+                      <span className="text-[11px] text-[#9C7B6A]">
+                        {s.name}{s.ml ? ` ${s.ml}ml` : ''}
+                      </span>
+                      <span className="text-sm font-bold text-[#2C1810]">{s.price} lei</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : singleSize ? (
+            <span className="text-base font-bold text-[#2C1810]">{item.sizes![0].price} lei</span>
+          ) : (
+            <span className="text-base font-bold text-[#2C1810]">{item.price} lei</span>
+          )}
         </div>
       </div>
     </div>
@@ -144,7 +175,7 @@ export function MenuClient({ categories, items }: Props) {
     if (id !== 'all') {
       const el = sectionRefs.current[id]
       if (el) {
-        const offset = 130
+        const offset = 140
         const top = el.getBoundingClientRect().top + window.scrollY - offset
         window.scrollTo({ top, behavior: 'smooth' })
       }
@@ -153,49 +184,47 @@ export function MenuClient({ categories, items }: Props) {
     }
   }
 
-  const displayCategories = categories.filter((c) =>
-    activeCategory === 'all' || c.id === activeCategory ? true : true
-  )
-
   return (
     <div>
-      {/* Sticky category nav */}
-      <div className="sticky top-16 z-40 border-b border-[#E8D5C0] px-4 py-2"
+      {/* Sticky category nav — wrap pe mobil, scroll pe desktop */}
+      <div className="sticky top-16 z-40 border-b border-[#E8D5C0] px-4 py-3"
         style={{ backgroundColor: '#FDF6EE' }}>
-        <div className="max-w-4xl mx-auto flex gap-2 overflow-x-auto scrollbar-hide pb-1">
-          {navCategories.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => scrollToCategory(cat.id)}
-              className={`flex items-center gap-1.5 shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
-                activeCategory === cat.id
-                  ? 'text-[#FDF6EE]'
-                  : 'bg-white border border-[#E8D5C0] text-[#7A5C4A] hover:border-[#D4956A]'
-              }`}
-              style={activeCategory === cat.id ? { backgroundColor: '#2C1810' } : undefined}
-            >
-              {cat.icon && <span>{cat.icon}</span>}
-              {cat.name}
-            </button>
-          ))}
-          <label className="flex items-center gap-1.5 shrink-0 px-4 py-1.5 rounded-full text-sm border border-[#E8D5C0] bg-white cursor-pointer text-[#7A5C4A] ml-auto">
-            <input
-              type="checkbox"
-              checked={showOnlyAvailable}
-              onChange={(e) => setShowOnlyAvailable(e.target.checked)}
-              className="accent-[#D4956A]"
-            />
-            Disponibile
-          </label>
+        <div className="max-w-4xl mx-auto">
+          <div className="flex flex-wrap gap-2 md:flex-nowrap md:overflow-x-auto md:scrollbar-hide">
+            {navCategories.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => scrollToCategory(cat.id)}
+                className={`flex items-center gap-1.5 shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
+                  activeCategory === cat.id
+                    ? 'text-[#FDF6EE]'
+                    : 'bg-white border border-[#E8D5C0] text-[#7A5C4A] hover:border-[#D4956A]'
+                }`}
+                style={activeCategory === cat.id ? { backgroundColor: '#2C1810' } : undefined}
+              >
+                {cat.icon && <span>{cat.icon}</span>}
+                {cat.name}
+              </button>
+            ))}
+            <label className="flex items-center gap-1.5 shrink-0 px-4 py-1.5 rounded-full text-sm border border-[#E8D5C0] bg-white cursor-pointer text-[#7A5C4A] md:ml-auto">
+              <input
+                type="checkbox"
+                checked={showOnlyAvailable}
+                onChange={(e) => setShowOnlyAvailable(e.target.checked)}
+                className="accent-[#D4956A]"
+              />
+              Disponibile
+            </label>
+          </div>
         </div>
       </div>
 
       {/* Allergen legend */}
-      <div className="px-4 py-3 border-b border-[#E8D5C0]" style={{ backgroundColor: '#FFF9F0' }}>
-        <div className="max-w-4xl mx-auto flex items-center gap-4 flex-wrap">
+      <div className="px-4 py-2.5 border-b border-[#E8D5C0]" style={{ backgroundColor: '#FFF9F0' }}>
+        <div className="max-w-4xl mx-auto flex items-center gap-3 flex-wrap">
           <span className="text-xs text-[#9C7B6A] font-medium">Alergeni:</span>
           {Object.entries(ALLERGEN_LABELS).map(([key, abbr]) => (
-            <div key={key} className="flex items-center gap-1.5">
+            <div key={key} className="flex items-center gap-1">
               <span className="inline-flex items-center justify-center w-4 h-4 rounded-full text-white text-[9px] font-bold"
                 style={{ backgroundColor: ALLERGEN_COLORS[key] ?? '#9C7B6A' }}>
                 {abbr}
@@ -220,7 +249,8 @@ export function MenuClient({ categories, items }: Props) {
                   <div className="flex items-center gap-3 mb-5">
                     {cat.icon && <span className="text-2xl">{cat.icon}</span>}
                     <div>
-                      <h2 className="text-2xl font-bold text-[#1A0F0A]" style={{ fontFamily: 'var(--font-heading)' }}>
+                      <h2 className="text-2xl font-bold text-[#1A0F0A]"
+                        style={{ fontFamily: 'var(--font-heading)' }}>
                         {cat.name}
                       </h2>
                       {cat.description && (
@@ -245,7 +275,8 @@ export function MenuClient({ categories, items }: Props) {
                   <div className="flex items-center gap-3 mb-5">
                     {cat.icon && <span className="text-2xl">{cat.icon}</span>}
                     <div>
-                      <h2 className="text-2xl font-bold text-[#1A0F0A]" style={{ fontFamily: 'var(--font-heading)' }}>
+                      <h2 className="text-2xl font-bold text-[#1A0F0A]"
+                        style={{ fontFamily: 'var(--font-heading)' }}>
                         {cat.name}
                       </h2>
                       {cat.description && (
@@ -258,22 +289,24 @@ export function MenuClient({ categories, items }: Props) {
                       {catItems.map((item) => <MenuItemCard key={item.id} item={item} />)}
                     </div>
                   ) : (
-                    <p className="text-[#9C7B6A] py-8 text-center">Nu există produse disponibile în această categorie.</p>
+                    <p className="text-[#9C7B6A] py-8 text-center">
+                      Nu există produse disponibile în această categorie.
+                    </p>
                   )}
                 </section>
               )
             })()
         }
 
-        {/* Empty state if no items at all */}
         {filteredItems.length === 0 && (
           <div className="text-center py-20 text-[#9C7B6A]">
             <p className="text-lg mb-2">Meniu în curând</p>
-            <p className="text-sm">Contactați-ne la {SITE_CONFIG.business.phoneDisplay} pentru detalii.</p>
+            <p className="text-sm">
+              Contactați-ne la {SITE_CONFIG.business.phoneDisplay} pentru detalii.
+            </p>
           </div>
         )}
       </div>
     </div>
   )
 }
-
