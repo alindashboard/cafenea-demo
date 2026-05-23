@@ -107,9 +107,11 @@ export default async function HomePage() {
 
       {/* Hero */}
       <section className="relative py-24 px-4 overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #1A0F0A 0%, #2C1810 50%, #3D2218 100%)' }}>
-        <div className="absolute inset-0 opacity-10"
-          style={{ backgroundImage: 'radial-gradient(circle at 70% 30%, #D4956A 0%, transparent 60%)' }} />
+        style={{ background: '#1A0F0A' }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/pictures/interior-2.png" alt=""
+          className="absolute inset-0 w-full h-full object-cover opacity-40" aria-hidden="true" />
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(26,15,10,0.55) 0%, rgba(26,15,10,0.75) 100%)' }} />
         <div className="relative max-w-4xl mx-auto text-center">
           <p className="text-sm font-medium uppercase tracking-widest mb-4" style={{ color: '#D4956A' }}>
             Specialty Coffee · Bistrița
@@ -189,21 +191,21 @@ export default async function HomePage() {
             </Link>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div className="row-span-2 rounded-2xl overflow-hidden"
-              style={{ background: 'linear-gradient(160deg, #3D2218, #6B3A28, #D4956A)', aspectRatio: '4/5',
-                display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span className="text-[#FDF6EE]/40 text-sm text-center px-3">Interior cald, lemn și lumini</span>
+            <div className="row-span-2 rounded-2xl overflow-hidden" style={{ aspectRatio: '4/5' }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/pictures/interior-1.png" alt="Interior Brew & Bean"
+                className="w-full h-full object-cover" />
             </div>
             <div className="space-y-3">
-              <div className="rounded-2xl overflow-hidden"
-                style={{ background: 'linear-gradient(135deg, #2C1810, #D4956A)', aspectRatio: '1', display: 'flex',
-                  alignItems: 'center', justifyContent: 'center' }}>
-                <span className="text-[#FDF6EE]/40 text-xs">Bar espresso</span>
+              <div className="rounded-2xl overflow-hidden" style={{ aspectRatio: '1' }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/pictures/esspresso-bar.png" alt="Bar espresso"
+                  className="w-full h-full object-cover" />
               </div>
-              <div className="rounded-2xl overflow-hidden"
-                style={{ background: 'linear-gradient(135deg, #D4956A, #8B4E2E)', aspectRatio: '1', display: 'flex',
-                  alignItems: 'center', justifyContent: 'center' }}>
-                <span className="text-[#FDF6EE]/40 text-xs">Latte art</span>
+              <div className="rounded-2xl overflow-hidden" style={{ aspectRatio: '1' }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/pictures/cappucino.png" alt="Cappuccino"
+                  className="w-full h-full object-cover" />
               </div>
             </div>
           </div>
