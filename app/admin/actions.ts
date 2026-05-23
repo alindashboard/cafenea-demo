@@ -140,8 +140,8 @@ async function deleteFromStorage(
   if (!imageUrl) return
   try {
     const url = new URL(imageUrl)
-    const pathInBucket = url.pathname.replace('/storage/v1/object/public/items/', '')
-    if (!pathInBucket.startsWith('/')) {
+    const pathInBucket = decodeURIComponent(url.pathname.replace('/storage/v1/object/public/items/', ''))
+    if (pathInBucket && !pathInBucket.startsWith('/')) {
       await supabase.storage.from('items').remove([pathInBucket])
     }
   } catch {
@@ -156,7 +156,7 @@ export async function uploadMainImage(itemId: string, formData: FormData) {
     if (!file || file.size === 0) return { error: 'Fișier invalid.' }
 
     const ext = file.name.split('.').pop()?.toLowerCase() ?? 'jpg'
-    const path = `items/${itemId}/main-${Date.now()}.${ext}`
+    const path = `${itemId}/main-${Date.now()}.${ext}`
 
     const { error: uploadError } = await supabase.storage
       .from('items')
