@@ -31,7 +31,7 @@ export const SITE_CONFIG = {
     bgWarm: '#FDF6EE',
     bgCard: '#FFF9F0',
     textDark: '#1A0F0A',
-    logo: '/logo.svg',
+    logo: '/pictures/logo.png',
   },
   features: {
     reservations: false, // TODO: PREMIUM FEATURE — rezervări masă online
