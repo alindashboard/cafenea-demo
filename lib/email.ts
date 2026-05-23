@@ -1,6 +1,4 @@
 import { Resend } from 'resend'
-import { format } from 'date-fns'
-import { ro } from 'date-fns/locale'
 import { SITE_CONFIG } from '@/lib/config'
 
 const FROM = `${SITE_CONFIG.business.name} <onboarding@resend.dev>`
@@ -12,136 +10,6 @@ function esc(s: string): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#x27;')
-}
-
-interface ReservationEmailData {
-  customerName: string
-  customerPhone: string
-  customerEmail: string
-  itemName: string
-  startDate: string
-  endDate: string
-  totalPrice: number
-  guests: number | null
-  notes: string
-}
-
-function formatDate(dateStr: string) {
-  const [y, m, d] = dateStr.split('-').map(Number)
-  return format(new Date(y, m - 1, d), 'd MMMM yyyy', { locale: ro })
-}
-
-function adminHtml(d: ReservationEmailData & { start: string; end: string }) {
-  const { url, business } = SITE_CONFIG
-  return `<!DOCTYPE html>
-<html lang="ro">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#f4f4f5;font-family:sans-serif">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:32px 0">
-    <tr><td align="center">
-      <table width="560" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08)">
-        <tr>
-          <td style="background:#1e3a5f;padding:24px 32px">
-            <p style="margin:0;color:#fff;font-size:20px;font-weight:700">${esc(business.name)}</p>
-            <p style="margin:4px 0 0;color:#93c5fd;font-size:13px">Rezervare nouă</p>
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:28px 32px">
-            <p style="margin:0 0 20px;font-size:22px;font-weight:700;color:#111">📋 ${esc(d.itemName)}</p>
-            <table width="100%" cellpadding="0" cellspacing="0">
-              <tr>
-                <td style="padding:10px 0;border-bottom:1px solid #f0f0f0;color:#555;font-size:14px;width:140px">Client</td>
-                <td style="padding:10px 0;border-bottom:1px solid #f0f0f0;font-weight:600;font-size:14px">${esc(d.customerName)}</td>
-              </tr>
-              <tr>
-                <td style="padding:10px 0;border-bottom:1px solid #f0f0f0;color:#555;font-size:14px">Telefon</td>
-                <td style="padding:10px 0;border-bottom:1px solid #f0f0f0;font-weight:600;font-size:14px">
-                  <a href="tel:${esc(d.customerPhone)}" style="color:#2563eb;text-decoration:none">${esc(d.customerPhone)}</a>
-                </td>
-              </tr>
-              <tr>
-                <td style="padding:10px 0;border-bottom:1px solid #f0f0f0;color:#555;font-size:14px">Email</td>
-                <td style="padding:10px 0;border-bottom:1px solid #f0f0f0;font-size:14px">${d.customerEmail ? esc(d.customerEmail) : '—'}</td>
-              </tr>
-              ${d.guests ? `<tr>
-                <td style="padding:10px 0;border-bottom:1px solid #f0f0f0;color:#555;font-size:14px">Persoane</td>
-                <td style="padding:10px 0;border-bottom:1px solid #f0f0f0;font-weight:600;font-size:14px">${d.guests}</td>
-              </tr>` : ''}
-              <tr>
-                <td style="padding:10px 0;border-bottom:1px solid #f0f0f0;color:#555;font-size:14px">Perioadă</td>
-                <td style="padding:10px 0;border-bottom:1px solid #f0f0f0;font-weight:600;font-size:14px">${esc(d.start)} → ${esc(d.end)}</td>
-              </tr>
-              <tr>
-                <td style="padding:10px 0;border-bottom:1px solid #f0f0f0;color:#555;font-size:14px">Total estimat</td>
-                <td style="padding:10px 0;border-bottom:1px solid #f0f0f0;font-weight:700;font-size:16px;color:#2563eb">${d.totalPrice} RON</td>
-              </tr>
-              ${d.notes ? `<tr>
-                <td style="padding:10px 0;color:#555;font-size:14px;vertical-align:top">Mențiuni</td>
-                <td style="padding:10px 0;font-size:14px;color:#444">${esc(d.notes)}</td>
-              </tr>` : ''}
-            </table>
-            <div style="margin-top:28px;padding:16px;background:#eff6ff;border-radius:8px;border-left:4px solid #2563eb">
-              <p style="margin:0;font-size:13px;color:#1e40af">Intră în <a href="${url}/admin/dashboard" style="color:#2563eb;font-weight:600">panoul de admin</a> pentru a aproba sau respinge rezervarea.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:16px 32px;background:#f9fafb;border-top:1px solid #e5e7eb">
-            <p style="margin:0;font-size:12px;color:#9ca3af">${esc(business.name)} · ${esc(business.address)} · ${esc(business.phoneDisplay)}</p>
-          </td>
-        </tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`
-}
-
-function customerHtml(d: { customerName: string; itemName: string; start: string; end: string; totalPrice: number }) {
-  const { url, business, itemLabel } = SITE_CONFIG
-  return `<!DOCTYPE html>
-<html lang="ro">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#f4f4f5;font-family:sans-serif">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:32px 0">
-    <tr><td align="center">
-      <table width="560" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08)">
-        <tr>
-          <td style="background:#1e3a5f;padding:24px 32px">
-            <p style="margin:0;color:#fff;font-size:20px;font-weight:700">${esc(business.name)}</p>
-            <p style="margin:4px 0 0;color:#93c5fd;font-size:13px">${esc(business.address)}</p>
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:32px">
-            <p style="margin:0 0 8px;font-size:22px;font-weight:700;color:#111">Mulțumim, ${esc(d.customerName)}!</p>
-            <p style="margin:0 0 24px;color:#555;font-size:15px;line-height:1.6">Cererea ta de rezervare a fost primită. Te vom contacta telefonic în cel mai scurt timp pentru confirmare.</p>
-
-            <div style="background:#f8fafc;border-radius:10px;padding:20px;margin-bottom:24px">
-              <p style="margin:0 0 12px;font-weight:700;font-size:15px;color:#111">${esc(d.itemName)}</p>
-              <p style="margin:0 0 6px;font-size:14px;color:#555">📅 ${esc(d.start)} → ${esc(d.end)}</p>
-              <p style="margin:0;font-size:15px;font-weight:700;color:#2563eb">${d.totalPrice} RON / ${itemLabel.priceUnit} <span style="font-size:13px;font-weight:400;color:#888">(estimat, se confirmă)</span></p>
-            </div>
-
-            <div style="background:#f0fdf4;border-radius:8px;padding:16px;margin-bottom:24px">
-              <p style="margin:0;font-size:13px;color:#166534;line-height:1.5">✓ Rezervarea va fi confirmată telefonic<br>✓ Nu se percepe avans la această etapă<br>✓ Prețul final se stabilește la confirmare</p>
-            </div>
-
-            <p style="margin:0;font-size:14px;color:#555">Ai întrebări? Contactează-ne:</p>
-            <a href="tel:${business.phone}" style="display:inline-block;margin-top:10px;padding:12px 24px;background:#2563eb;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px">${esc(business.phoneDisplay)}</a>
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:16px 32px;background:#f9fafb;border-top:1px solid #e5e7eb">
-            <p style="margin:0;font-size:12px;color:#9ca3af">${esc(business.name)} · ${url.replace('https://', '')}</p>
-          </td>
-        </tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`
 }
 
 interface ContactEmailData {
@@ -156,47 +24,50 @@ function contactHtml(d: ContactEmailData) {
   return `<!DOCTYPE html>
 <html lang="ro">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#f4f4f5;font-family:sans-serif">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:32px 0">
+<body style="margin:0;padding:0;background:#F5E8D8;font-family:Georgia,serif">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#F5E8D8;padding:32px 0">
     <tr><td align="center">
-      <table width="560" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08)">
+      <table width="560" cellpadding="0" cellspacing="0" style="background:#FFF9F0;border-radius:16px;overflow:hidden;box-shadow:0 2px 8px rgba(44,24,16,.12)">
         <tr>
-          <td style="background:#1e3a5f;padding:24px 32px">
-            <p style="margin:0;color:#fff;font-size:20px;font-weight:700">${esc(business.name)}</p>
-            <p style="margin:4px 0 0;color:#93c5fd;font-size:13px">Formular contact</p>
+          <td style="background:#2C1810;padding:24px 32px">
+            <p style="margin:0;color:#FDF6EE;font-family:Georgia,serif;font-size:22px;font-weight:700">&#9749; ${esc(business.name)}</p>
+            <p style="margin:4px 0 0;color:#D4956A;font-size:13px;font-family:sans-serif">Mesaj nou prin formular de contact</p>
           </td>
         </tr>
         <tr>
           <td style="padding:28px 32px">
-            <p style="margin:0 0 20px;font-size:22px;font-weight:700;color:#111">✉️ Cerere nouă</p>
             <table width="100%" cellpadding="0" cellspacing="0">
               <tr>
-                <td style="padding:10px 0;border-bottom:1px solid #f0f0f0;color:#555;font-size:14px;width:140px">Nume</td>
-                <td style="padding:10px 0;border-bottom:1px solid #f0f0f0;font-weight:600;font-size:14px">${esc(d.name)}</td>
+                <td style="padding:10px 0;border-bottom:1px solid #F0E4D4;color:#7A5C4A;font-size:14px;width:130px;font-family:sans-serif">Nume</td>
+                <td style="padding:10px 0;border-bottom:1px solid #F0E4D4;font-weight:700;font-size:14px;color:#1A0F0A;font-family:sans-serif">${esc(d.name)}</td>
               </tr>
               <tr>
-                <td style="padding:10px 0;border-bottom:1px solid #f0f0f0;color:#555;font-size:14px">Telefon</td>
-                <td style="padding:10px 0;border-bottom:1px solid #f0f0f0;font-weight:600;font-size:14px">
-                  <a href="tel:${esc(d.phone)}" style="color:#2563eb;text-decoration:none">${esc(d.phone)}</a>
+                <td style="padding:10px 0;border-bottom:1px solid #F0E4D4;color:#7A5C4A;font-size:14px;font-family:sans-serif">Telefon</td>
+                <td style="padding:10px 0;border-bottom:1px solid #F0E4D4;font-size:14px;font-family:sans-serif">
+                  <a href="tel:${esc(d.phone)}" style="color:#D4956A;font-weight:700;text-decoration:none">${esc(d.phone)}</a>
                 </td>
               </tr>
               ${d.email ? `<tr>
-                <td style="padding:10px 0;border-bottom:1px solid #f0f0f0;color:#555;font-size:14px">Email</td>
-                <td style="padding:10px 0;border-bottom:1px solid #f0f0f0;font-size:14px">${esc(d.email)}</td>
+                <td style="padding:10px 0;border-bottom:1px solid #F0E4D4;color:#7A5C4A;font-size:14px;font-family:sans-serif">Email</td>
+                <td style="padding:10px 0;border-bottom:1px solid #F0E4D4;font-size:14px;font-family:sans-serif">
+                  <a href="mailto:${esc(d.email)}" style="color:#D4956A;text-decoration:none">${esc(d.email)}</a>
+                </td>
               </tr>` : ''}
               <tr>
-                <td style="padding:10px 0;color:#555;font-size:14px;vertical-align:top">Mesaj</td>
-                <td style="padding:10px 0;font-size:14px;color:#444;line-height:1.6">${esc(d.message).replace(/\n/g, '<br>')}</td>
+                <td style="padding:10px 0;color:#7A5C4A;font-size:14px;vertical-align:top;font-family:sans-serif">Mesaj</td>
+                <td style="padding:10px 0;font-size:14px;color:#1A0F0A;line-height:1.7;font-family:sans-serif">${esc(d.message).replace(/\n/g, '<br>')}</td>
               </tr>
             </table>
-            <div style="margin-top:28px;padding:16px;background:#eff6ff;border-radius:8px;border-left:4px solid #2563eb">
-              <p style="margin:0;font-size:13px;color:#1e40af">Intră în <a href="${url}/admin/contact" style="color:#2563eb;font-weight:600">panoul de admin</a> pentru a marca cererea ca rezolvată.</p>
+            <div style="margin-top:24px;padding:14px 18px;background:#FDF6EE;border-radius:10px;border-left:4px solid #D4956A">
+              <p style="margin:0;font-size:13px;color:#5A3D2E;font-family:sans-serif">
+                Intr&#259; &#238;n <a href="${url}/admin/dashboard" style="color:#D4956A;font-weight:600;text-decoration:none">panoul de admin</a> pentru a marca mesajul ca rezolvat.
+              </p>
             </div>
           </td>
         </tr>
         <tr>
-          <td style="padding:16px 32px;background:#f9fafb;border-top:1px solid #e5e7eb">
-            <p style="margin:0;font-size:12px;color:#9ca3af">${esc(business.name)} · ${esc(business.address)} · ${esc(business.phoneDisplay)}</p>
+          <td style="padding:16px 32px;background:#2C1810">
+            <p style="margin:0;font-size:12px;color:#9C7B6A;font-family:sans-serif">${esc(business.name)} &middot; ${esc(business.address)} &middot; ${esc(business.phoneDisplay)}</p>
           </td>
         </tr>
       </table>
@@ -215,35 +86,7 @@ export async function sendContactEmail(data: ContactEmailData) {
   await resend.emails.send({
     from: FROM,
     to: adminEmail,
-    subject: `✉️ Contact nou: ${data.name} — ${data.phone}`,
+    subject: `Contact nou: ${data.name} — ${data.phone}`,
     html: contactHtml(data),
   })
-}
-
-export async function sendReservationEmails(data: ReservationEmailData) {
-  const apiKey = process.env.RESEND_API_KEY
-  const adminEmail = process.env.ADMIN_EMAIL
-  if (!apiKey || !adminEmail) return
-
-  const resend = new Resend(apiKey)
-  const start = formatDate(data.startDate)
-  const end = formatDate(data.endDate)
-
-  // Admin notification — always sent
-  await resend.emails.send({
-    from: FROM,
-    to: adminEmail,
-    subject: `📋 Rezervare nouă: ${data.itemName} — ${data.customerName}`,
-    html: adminHtml({ ...data, start, end }),
-  })
-
-  // Customer confirmation — activate after verifying domain in Resend
-  // if (data.customerEmail) {
-  //   await resend.emails.send({
-  //     from: FROM,
-  //     to: data.customerEmail,
-  //     subject: `Rezervare primită — ${data.itemName}`,
-  //     html: customerHtml({ customerName: data.customerName, itemName: data.itemName, start, end, totalPrice: data.totalPrice }),
-  //   })
-  // }
 }

@@ -1,40 +1,54 @@
 -- ============================================================
--- Site Template — Generic Schema
+-- Brew & Bean — Schema Supabase
 -- Run in Supabase SQL Editor (copy-paste the whole file)
 -- ============================================================
 
--- Items table (rename to match your domain: rooms, apartments, cars, etc.)
-create table if not exists public.items (
-  id            uuid primary key default gen_random_uuid(),
-  name          text not null,
-  description   text,
-  price         numeric(10, 2) not null,
-  price_unit    text not null default 'zi' check (price_unit in ('zi', 'noapte', 'ora')),
-  capacity      integer,
-  features      text[],
-  image_url     text,
-  available     boolean not null default true,
-  created_at    timestamptz not null default now()
+-- Menu categories
+create table if not exists public.menu_categories (
+  id          uuid primary key default gen_random_uuid(),
+  name        text not null,
+  description text,
+  icon        text,
+  sort_order  integer not null default 0,
+  visible     boolean not null default true,
+  created_at  timestamptz not null default now()
 );
 
--- Item images (gallery support)
-create table if not exists public.item_images (
+-- Menu items (produse)
+create table if not exists public.items (
+  id           uuid primary key default gen_random_uuid(),
+  category_id  uuid references public.menu_categories(id) on delete set null,
+  name         text not null,
+  description  text,
+  price        numeric(10, 2) not null default 0,
+  price_unit   text,
+  image_url    text,
+  available    boolean not null default true,
+  is_popular   boolean not null default false,
+  features     text[],
+  allergens    text[],
+  sizes        jsonb,
+  created_at   timestamptz not null default now()
+);
+
+-- Gallery (poze locație/ambient)
+create table if not exists public.gallery (
   id         uuid primary key default gen_random_uuid(),
-  item_id    uuid not null references public.items(id) on delete cascade,
   url        text not null,
-  position   integer not null default 0,
+  caption    text,
+  sort_order integer not null default 0,
   created_at timestamptz not null default now()
 );
 
--- Reservations
+-- Reservations (masă — dezactivate din config, structura există pentru viitor)
 create table if not exists public.reservations (
   id             uuid primary key default gen_random_uuid(),
-  item_id        uuid not null references public.items(id) on delete cascade,
+  item_id        uuid references public.items(id) on delete set null,
   customer_name  text not null,
   customer_phone text not null,
   customer_email text,
-  start_date     date not null,
-  end_date       date not null,
+  start_date     timestamptz not null,
+  end_date       timestamptz,
   guests         integer,
   total_price    numeric(10, 2),
   status         text not null default 'pending'
@@ -54,7 +68,7 @@ create table if not exists public.contact_requests (
   created_at timestamptz not null default now()
 );
 
--- Key-value store for editable site settings
+-- Site settings
 create table if not exists public.site_settings (
   key        text primary key,
   value      jsonb not null,
@@ -65,49 +79,46 @@ create table if not exists public.site_settings (
 -- Indexes
 -- ============================================================
 
-create index if not exists reservations_item_id_idx  on public.reservations(item_id);
-create index if not exists reservations_dates_idx    on public.reservations(start_date, end_date);
-create index if not exists reservations_status_idx   on public.reservations(status);
-create index if not exists item_images_item_id_idx   on public.item_images(item_id);
-create index if not exists item_images_position_idx  on public.item_images(item_id, position);
+create index if not exists items_category_idx       on public.items(category_id);
+create index if not exists items_available_idx      on public.items(available);
+create index if not exists items_popular_idx        on public.items(is_popular);
+create index if not exists menu_categories_sort_idx on public.menu_categories(sort_order);
+create index if not exists gallery_sort_idx         on public.gallery(sort_order);
+create index if not exists reservations_status_idx  on public.reservations(status);
 
 -- ============================================================
 -- Row Level Security
 -- ============================================================
 
-alter table public.items enable row level security;
-alter table public.item_images enable row level security;
-alter table public.reservations enable row level security;
-alter table public.contact_requests enable row level security;
-alter table public.site_settings enable row level security;
+alter table public.menu_categories   enable row level security;
+alter table public.items             enable row level security;
+alter table public.gallery           enable row level security;
+alter table public.reservations      enable row level security;
+alter table public.contact_requests  enable row level security;
+alter table public.site_settings     enable row level security;
 
--- Public can read available items
+create policy "menu_categories_public_read" on public.menu_categories
+  for select using (visible = true);
+
 create policy "items_public_read" on public.items
   for select using (true);
 
--- Public can read item images
-create policy "item_images_public_read" on public.item_images
+create policy "gallery_public_read" on public.gallery
   for select using (true);
 
--- Public can create a reservation
-create policy "reservations_public_insert" on public.reservations
-  for insert with check (true);
-
--- Public can create a contact request
 create policy "contact_requests_public_insert" on public.contact_requests
   for insert with check (true);
 
--- Public can read site_settings (for frontend display)
 create policy "site_settings_public_read" on public.site_settings
   for select using (true);
 
 -- ============================================================
--- Default site_settings seed
+-- Default site settings
 -- ============================================================
 
 insert into public.site_settings (key, value) values
-  ('hero_title',    '"Titlul principal al site-ului"'),
-  ('hero_subtitle', '"Subtitlul sau tagline-ul afacerii tale."'),
-  ('benefits',      '["Beneficiu 1", "Beneficiu 2", "Beneficiu 3", "Beneficiu 4"]'),
+  ('hero_title',    '"Brew & Bean — Cafea de specialitate în inima Bistriței"'),
+  ('hero_subtitle', '"Din boabe selectate manual, prăjite local, preparate cu pasiune."'),
+  ('benefits',      '["Specialty coffee", "Prăjitorie locală", "Lapte vegetal disponibil", "Terasă în centru"]'),
   ('maps_embed',    'null')
 on conflict (key) do nothing;

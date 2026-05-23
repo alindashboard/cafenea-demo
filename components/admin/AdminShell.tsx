@@ -1,86 +1,64 @@
 import Link from 'next/link'
-import { LayoutDashboard, Package, MessageSquare } from 'lucide-react'
+import { LayoutDashboard, Coffee, Tag, Images, MessageSquare } from 'lucide-react'
 import { SignOutButton } from './SignOutButton'
 import { createSupabaseAdminClient } from '@/lib/supabase'
 import { SITE_CONFIG } from '@/lib/config'
 
 interface AdminShellProps {
   children: React.ReactNode
-  activeSection?: 'dashboard' | 'items' | 'contact'
+  activeSection?: 'dashboard' | 'menu' | 'categories' | 'gallery' | 'contact'
 }
 
 async function getCounts() {
   const supabase = createSupabaseAdminClient()
-  const [pending, unresolved] = await Promise.all([
-    supabase.from('reservations').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
-    supabase.from('contact_requests').select('id', { count: 'exact', head: true }).eq('resolved', false),
-  ])
-  return {
-    pendingReservations: pending.count ?? 0,
-    unresolvedContacts: unresolved.count ?? 0,
-  }
+  const unresolved = await supabase
+    .from('contact_requests')
+    .select('id', { count: 'exact', head: true })
+    .eq('resolved', false)
+  return { unresolvedContacts: unresolved.count ?? 0 }
 }
 
 export async function AdminShell({ children, activeSection }: AdminShellProps) {
-  const { pendingReservations, unresolvedContacts } = await getCounts()
-  const { business, itemLabel } = SITE_CONFIG
-  const itemsLabel = itemLabel.plural.charAt(0).toUpperCase() + itemLabel.plural.slice(1)
+  const { unresolvedContacts } = await getCounts()
+  const { business } = SITE_CONFIG
+
+  const navItem = (href: string, section: AdminShellProps['activeSection'], icon: React.ReactNode, label: string, badge?: number) => (
+    <Link
+      href={href}
+      className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors ${
+        activeSection === section
+          ? 'bg-[#3D2218] text-[#FDF6EE]'
+          : 'text-[#D4C4B0] hover:text-[#FDF6EE] hover:bg-[#3D2218]'
+      }`}
+    >
+      {icon}
+      <span className="flex-1">{label}</span>
+      {!!badge && badge > 0 && (
+        <span className="bg-[#D4956A] text-[#1A0F0A] text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
+          {badge}
+        </span>
+      )}
+    </Link>
+  )
 
   return (
     <div className="flex min-h-screen">
-      <aside className="w-56 bg-slate-900 text-white flex flex-col shrink-0">
-        <div className="p-4 border-b border-slate-700">
-          <p className="font-bold text-sm">{business.name}</p>
-          <p className="text-xs text-slate-500 mt-0.5">Panou Admin</p>
+      <aside className="w-56 flex flex-col shrink-0" style={{ backgroundColor: '#2C1810' }}>
+        <div className="p-4 border-b border-[#3D2218]">
+          <p className="font-bold text-sm text-[#FDF6EE]" style={{ fontFamily: 'var(--font-heading)' }}>
+            {business.name}
+          </p>
+          <p className="text-xs text-[#9C7B6A] mt-0.5">Panou Admin</p>
         </div>
 
         <nav className="flex-1 p-3 space-y-1">
-          <Link
-            href="/admin/dashboard"
-            className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors ${
-              activeSection === 'dashboard'
-                ? 'bg-slate-700 text-white'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800'
-            }`}
-          >
-            <LayoutDashboard className="h-4 w-4" />
-            <span className="flex-1">Rezervări</span>
-            {pendingReservations > 0 && (
-              <span className="bg-blue-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
-                {pendingReservations}
-              </span>
-            )}
-          </Link>
-          <Link
-            href="/admin/items"
-            className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors ${
-              activeSection === 'items'
-                ? 'bg-slate-700 text-white'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800'
-            }`}
-          >
-            <Package className="h-4 w-4" />
-            {itemsLabel}
-          </Link>
-          <Link
-            href="/admin/contact"
-            className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors ${
-              activeSection === 'contact'
-                ? 'bg-slate-700 text-white'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800'
-            }`}
-          >
-            <MessageSquare className="h-4 w-4" />
-            <span className="flex-1">Formulare contact</span>
-            {unresolvedContacts > 0 && (
-              <span className="bg-amber-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
-                {unresolvedContacts}
-              </span>
-            )}
-          </Link>
+          {navItem('/admin/dashboard', 'dashboard', <LayoutDashboard className="h-4 w-4" />, 'Mesaje contact', unresolvedContacts)}
+          {navItem('/admin/menu', 'menu', <Coffee className="h-4 w-4" />, 'Meniu produse')}
+          {navItem('/admin/categories', 'categories', <Tag className="h-4 w-4" />, 'Categorii')}
+          {navItem('/admin/gallery', 'gallery', <Images className="h-4 w-4" />, 'Galerie')}
         </nav>
 
-        <div className="p-4 border-t border-slate-700">
+        <div className="p-4 border-t border-[#3D2218]">
           <SignOutButton />
         </div>
       </aside>

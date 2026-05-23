@@ -1,28 +1,33 @@
 import type { MetadataRoute } from 'next'
-import { createSupabaseAdminClient } from '@/lib/supabase'
 import { SITE_CONFIG } from '@/lib/config'
 
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const supabase = createSupabaseAdminClient()
-  const { data: items } = await supabase
-    .from('items')
-    .select('id, created_at')
-    .eq('available', true)
-
-  const itemPages: MetadataRoute.Sitemap = (items ?? []).map((item) => ({
-    url: `${SITE_CONFIG.url}/items/${item.id}`,
-    lastModified: new Date(item.created_at),
-    changeFrequency: 'weekly',
-    priority: 0.8,
-  }))
+export default function sitemap(): MetadataRoute.Sitemap {
+  const base = SITE_CONFIG.url
 
   return [
     {
-      url: SITE_CONFIG.url,
+      url: base,
       lastModified: new Date(),
       changeFrequency: 'daily',
       priority: 1,
     },
-    ...itemPages,
+    {
+      url: `${base}/meniu`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.9,
+    },
+    {
+      url: `${base}/despre`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+    {
+      url: `${base}/contact`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
   ]
 }
